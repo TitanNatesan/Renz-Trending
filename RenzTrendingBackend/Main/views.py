@@ -19,7 +19,6 @@ from django.contrib.auth.password_validation import validate_password
 
 # ic.disable()
 
-
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def register(request):
