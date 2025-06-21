@@ -16,12 +16,6 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
-from .shiprocket_service import (
-    ShiprocketAPI, 
-    create_shiprocket_order, 
-    track_order_shipment,
-    update_order_status_from_shiprocket,
-)
 
 # ic.disable()
 
@@ -951,104 +945,6 @@ def user_orders(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def create_shiprocket_shipment(request):
-    """Create shipment in Shiprocket for confirmed orders"""
-    if request.method == "POST":
-        try:
-            order_id = request.data.get("order_id")
-            if not order_id:
-                return Response({"error": "Order ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            order = models.Order.objects.get(id=order_id)
-            
-            # Check if order belongs to the authenticated user (admin check)
-            if not request.user.is_staff:
-                if order.customer.username != request.user.username:
-                    return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
-            
-            # Create Shiprocket order
-            success = create_shiprocket_order(order)
-            if success:
-                return Response({
-                    "success": True,
-                    "message": "Shipment created successfully",
-                    "order_id": order.id,
-                    "tracking_number": order.tracking_number
-                })
-            else:
-                return Response({
-                    "success": False,
-                    "message": "Failed to create shipment"
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
-        except models.Order.DoesNotExist:
-            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def track_order(request, tracking_number):
-    """Track order using tracking number"""
-    try:
-        # Find order by tracking number
-        order = models.Order.objects.get(tracking_number=tracking_number)
-        
-        # Check if order belongs to the authenticated user
-        if not request.user.is_staff:
-            if order.customer.username != request.user.username:
-                return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Get tracking data from Shiprocket
-        tracking_data = track_order_shipment(tracking_number)
-        
-        # Update order status based on tracking data
-        update_order_status_from_shiprocket(order)
-        
-        # Serialize order data
-        order_serializer = serializers.OrderSerializer(order)
-        
-        response_data = {
-            "order": order_serializer.data,
-            "tracking_data": tracking_data
-        }
-        
-        return Response(response_data)
-        
-    except models.Order.DoesNotExist:
-        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_shipping_rates(request):
-    """Get shipping rates for different couriers"""
-    try:
-        pickup_postcode = request.GET.get('pickup_postcode', '641604')  # Tiruppur postcode
-        delivery_postcode = request.GET.get('delivery_postcode')
-        weight = float(request.GET.get('weight', 0.5))
-        cod = int(request.GET.get('cod', 0))
-        
-        if not delivery_postcode:
-            return Response({"error": "delivery_postcode is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        shiprocket = ShiprocketAPI()
-        rates = shiprocket.get_shipping_rates(pickup_postcode, delivery_postcode, weight, cod)
-        
-        if rates:
-            return Response(rates)
-        else:
-            return Response({"error": "Failed to get shipping rates"}, status=status.HTTP_400_BAD_REQUEST)
-            
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(["POST"])
 @permission_classes([IsAdminUser])
 def update_order_tracking(request):
     """Admin endpoint to update order tracking information"""
@@ -1077,48 +973,6 @@ def update_order_tracking(request):
             "carrier": order.carrier
         })
         
-    except models.Order.DoesNotExist:
-        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def cancel_shiprocket_order(request):
-    """Cancel order in Shiprocket"""
-    try:
-        order_id = request.data.get("order_id")
-        if not order_id:
-            return Response({"error": "Order ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        order = models.Order.objects.get(id=order_id)
-        
-        if order.shiprocket_order_id:
-            shiprocket = ShiprocketAPI()
-            result = shiprocket.cancel_order(order.shiprocket_order_id)
-            
-            if result:
-                order.status = "cancelled"
-                order.save()
-                return Response({
-                    "success": True,
-                    "message": "Order cancelled successfully"
-                })
-            else:
-                return Response({
-                    "success": False,
-                    "message": "Failed to cancel order in Shiprocket"
-                }, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # If not in Shiprocket, just update local status
-            order.status = "cancelled"
-            order.save()
-            return Response({
-                "success": True,
-                "message": "Order cancelled successfully"
-            })
-            
     except models.Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
