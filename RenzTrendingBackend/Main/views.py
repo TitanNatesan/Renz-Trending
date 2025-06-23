@@ -495,7 +495,7 @@ def getWholeSaleProducts(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def Home(request):
+def Home(request):   #-> used
     cont = {}
     cont["login"] = request.user.username if request.user.is_authenticated else None
 

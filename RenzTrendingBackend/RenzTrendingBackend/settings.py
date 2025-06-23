@@ -108,7 +108,7 @@ WSGI_APPLICATION = 'RenzTrendingBackend.wsgi.application'
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'home.authentications.CustomAuthBackend',  # Add this line
+    'Main.authentications.CustomAuthBackend',  # Add this line
 ]
 
 # Database
@@ -193,34 +193,34 @@ JAZZMIN_SETTINGS = {
     "navigation_expanded": True,
     # Custom order for sidebar
     "order_with_respect_to": [
-        "home.Product",
-        "home.Order",
-        "home.Customer",
-        "home.Category",
-        "home.Address",
-        "home.Size",
-        "home.ProductVariant",
-        "home.Subscription",
-        "home.OrderItem",
-        "home.Color",
-        "home.image",
+        "Main.Product",
+        "Main.Order",
+        "Main.Customer",
+        "Main.Category",
+        "Main.Address",
+        "Main.Size",
+        "Main.ProductVariant",
+        "Main.Subscription",
+        "Main.OrderItem",
+        "Main.Color",
+        "Main.image",
     ],
     # Icons for the models
     "icons": {
         "rest_framework.authtoken.admin.TokenAdmin": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "home.Product": "fas fa-box",
-        "home.Order": "fas fa-shopping-cart",
-        "home.Customer": "fas fa-user",
-        "home.Address": "fas fa-address-card",
-        "home.OrderItem": "fas fa-clipboard-list",
-        "home.Size": "fas fa-ruler-horizontal",
-        "home.image": "fas fa-image",
-        "home.Category": "fas fa-tags",
-        "home.Subscription": "fas fa-envelope",
-        "home.Color": "fas fa-palette",
-        "home.ProductVariant": "fas fa-th-list",  # Updated icon for ProductVariant
+        "Main.Product": "fas fa-box",
+        "Main.Order": "fas fa-shopping-cart",
+        "Main.Customer": "fas fa-user",
+        "Main.Address": "fas fa-address-card",
+        "Main.OrderItem": "fas fa-clipboard-list",
+        "Main.Size": "fas fa-ruler-horizontal",
+        "Main.image": "fas fa-image",
+        "Main.Category": "fas fa-tags",
+        "Main.Subscription": "fas fa-envelope",
+        "Main.Color": "fas fa-palette",
+        "Main.ProductVariant": "fas fa-th-list",  # Updated icon for ProductVariant
     },
     "related_modal_active": False,
     "custom_css": None,
